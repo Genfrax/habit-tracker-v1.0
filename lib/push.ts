@@ -1,0 +1,63 @@
+"use client";
+
+import { getSupabase } from "./supabase";
+import { ensureCode } from "./syncCode";
+
+const urlBase64ToUint8Array = (base64: string): Uint8Array => {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(b64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+};
+
+export type PushResult =
+  | { ok: true }
+  | { ok: false; reason: "unsupported" | "denied" | "no-config" | "error"; detail?: string };
+
+export const pushSupported = (): boolean =>
+  typeof window !== "undefined" &&
+  "serviceWorker" in navigator &&
+  "PushManager" in window &&
+  "Notification" in window;
+
+export const notificationPermission = (): NotificationPermission | "unsupported" =>
+  pushSupported() ? Notification.permission : "unsupported";
+
+/** Pide permiso, se suscribe y guarda la suscripción en Supabase. */
+export const enablePush = async (): Promise<PushResult> => {
+  if (!pushSupported()) return { ok: false, reason: "unsupported" };
+
+  const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const supabase = getSupabase();
+  if (!vapid || !supabase) return { ok: false, reason: "no-config" };
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return { ok: false, reason: "denied" };
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapid),
+      });
+    }
+
+    const code = ensureCode();
+    const json = sub.toJSON();
+    const { error } = await supabase
+      .from("push_subscriptions")
+      .upsert(
+        { code, endpoint: json.endpoint, subscription: json },
+        { onConflict: "endpoint" }
+      );
+    if (error) return { ok: false, reason: "error", detail: error.message };
+
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: "error", detail: e instanceof Error ? e.message : String(e) };
+  }
+};

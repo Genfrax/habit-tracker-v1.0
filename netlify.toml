@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+
+# El plugin oficial de Next.js (Netlify lo instala automáticamente,
+# pero lo dejamos explícito por claridad).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Carpeta de funciones serverless / programadas.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
