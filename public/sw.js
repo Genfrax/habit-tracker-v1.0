@@ -1,32 +1,67 @@
 // Habitos Service Worker - PWA + Push Notifications
-const CACHE = "habitos-v1";
-const CORE = ["/", "/manifest.json"];
+// v2: estrategia segura para evitar servir HTML viejo en lugar de JS/CSS
+const CACHE = "habitos-v2";
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(CORE)).catch(() => {})
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
-  event.respondWith(
-    caches.match(req).then((hit) => hit || fetch(req).catch(() => caches.match("/")))
-  );
+
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch {
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+
+  // 1) Navegaciones (HTML): SIEMPRE red primero (nunca shell viejo).
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put("/", copy));
+          return res;
+        })
+        .catch(() => caches.match("/"))
+    );
+    return;
+  }
+
+  // 2) Assets hasheados de Next (inmutables): cache-first.
+  if (url.pathname.startsWith("/_next/static")) {
+    event.respondWith(
+      caches.match(req).then(
+        (hit) =>
+          hit ||
+          fetch(req).then((res) => {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+            return res;
+          })
+      )
+    );
+    return;
+  }
+
+  // 3) Resto: red primero, caché solo como respaldo. NUNCA HTML para assets.
+  event.respondWith(fetch(req).catch(() => caches.match(req)));
 });
 
-// Push notifications (iOS 16.4+ when installed as PWA)
+// ── Push notifications (iOS 16.4+ instalada como PWA) ────────────
 self.addEventListener("push", (event) => {
   let data = { title: "Hábitos", body: "Recordatorio de tu hábito" };
   try {
