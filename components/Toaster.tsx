@@ -25,7 +25,7 @@ export const Toaster = memo(function Toaster() {
   const dismiss = useToastStore((s) => s.dismiss);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+    <div className="pointer-events-none fixed left-0 right-[12vw] bottom-0 z-50 flex flex-col items-center gap-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:inset-x-0">
       <AnimatePresence initial={false}>
         {toasts.map((t) => (
           <motion.button

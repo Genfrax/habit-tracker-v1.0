@@ -110,7 +110,7 @@ export function CreateHabit() {
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.95 }}
         transition={{ type: "spring", stiffness: 400, damping: 24 }}
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-glow md:right-8 md:bottom-8"
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[14vw] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-glow md:right-8 md:bottom-8"
         aria-label="Crear hábito"
       >
         <motion.span layoutId="create-icon" className="flex items-center justify-center">

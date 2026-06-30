@@ -8,7 +8,7 @@ import { SyncManager } from "@/components/SyncManager";
 export default function HomePage() {
   return (
     <>
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[640px] flex-col gap-8 px-5 py-8 pb-28 md:px-8 md:py-14">
+      <div className="flex min-h-[100dvh] w-full flex-col gap-8 px-5 py-8 pb-28 pr-[12vw] md:mx-auto md:max-w-[640px] md:pr-5 md:px-8 md:py-14">
         <Header />
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between px-1">
