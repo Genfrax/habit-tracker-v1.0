@@ -110,7 +110,7 @@ export function CreateHabit() {
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.95 }}
         transition={{ type: "spring", stiffness: 400, damping: 24 }}
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[9vw] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-glow md:right-8 md:bottom-8"
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[14vw] mr-3 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-glow md:right-8 md:bottom-8 md:mr-0"
         aria-label="Crear hábito"
       >
         <motion.span layoutId="create-icon" className="flex items-center justify-center">
@@ -134,7 +134,7 @@ export function CreateHabit() {
               <motion.div
                 layoutId="create-surface"
                 transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                className="relative flex max-h-[90dvh] w-full max-w-[460px] flex-col overflow-hidden rounded-5xl border border-ink-100 bg-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.35)]"
+                className="relative flex max-h-[90dvh] ml-5 mr-[14vw] sm:w-full max-w-[460px] flex-col overflow-hidden rounded-5xl border border-ink-100 bg-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.35)] sm:mx-auto"
               >
                 <Confetti fire={phase === "success"} />
 
@@ -260,7 +260,7 @@ export function CreateHabit() {
                         {/* Repetir */}
                         <div className="flex flex-col gap-2">
                           <span className="text-sm font-medium text-ink-700">Repetir</span>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {REPEAT_OPTIONS.map((opt) => {
                               const active = repeat === opt.id;
                               return (
@@ -291,42 +291,42 @@ export function CreateHabit() {
                         </div>
 
                         {/* Días (solo semanal) */}
-                        <AnimatePresence initial={false}>
-                          {repeat === "weekly" && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                              className="flex flex-col gap-2 overflow-hidden"
-                            >
-                              <span className="text-sm font-medium text-ink-700">
-                                Días de la semana
-                              </span>
-                              <div className="flex items-center justify-between gap-1.5">
-                                {UI_DAYS.map((label, i) => {
-                                  const jsDay = UI_TO_JS[i];
-                                  const active = weekdays.includes(jsDay);
-                                  return (
-                                    <button
-                                      key={i}
-                                      type="button"
-                                      onClick={() => toggleDay(jsDay)}
-                                      aria-pressed={active}
-                                      className={`flex h-10 flex-1 items-center justify-center rounded-xl border text-sm font-semibold transition-all duration-150 active:scale-95 ${
-                                        active
-                                          ? "border-accent bg-accent text-white shadow-[0_4px_12px_-4px_rgba(0,102,255,0.5)]"
-                                          : "border-ink-100 bg-white text-ink-400 hover:border-ink-200"
-                                      }`}
-                                    >
-                                      {label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+<AnimatePresence initial={false}>
+  {repeat === "weekly" && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="flex flex-col gap-2"
+    >
+      <span className="text-sm font-medium text-ink-700">
+        Días de la semana
+      </span>
+      <div className="flex items-center justify-between gap-1.5">
+        {UI_DAYS.map((label, i) => {
+          const jsDay = UI_TO_JS[i];
+          const active = weekdays.includes(jsDay);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => toggleDay(jsDay)}
+              aria-pressed={active}
+              className={`flex h-10 flex-1 items-center justify-center rounded-xl border text-sm font-semibold transition-all duration-150 active:scale-95 ${
+                active
+                  ? "border-accent bg-accent text-white shadow-[0_4px_12px_-4px_rgba(0,102,255,0.5)]"
+                  : "border-ink-100 bg-white text-ink-400 hover:border-ink-200"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
                         {/* Hora */}
                         <div className="flex flex-col gap-2">
@@ -343,7 +343,7 @@ export function CreateHabit() {
                         </div>
 
                         {/* Fechas */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="flex flex-col gap-2">
                             <label htmlFor="habit-start" className="text-sm font-medium text-ink-700">
                               Inicio

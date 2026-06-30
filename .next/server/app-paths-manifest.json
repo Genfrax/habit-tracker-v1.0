@@ -1,6 +1,3 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
-  "/api/push/test/route": "app/api/push/test/route.js",
-  "/api/reminders/run/route": "app/api/reminders/run/route.js"
+  "/page": "app/page.js"
 }
