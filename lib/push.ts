@@ -25,6 +25,14 @@ export const pushSupported = (): boolean =>
 export const notificationPermission = (): NotificationPermission | "unsupported" =>
   pushSupported() ? Notification.permission : "unsupported";
 
+const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout en ${label} (${ms}ms)`)), ms)
+    ),
+  ]);
+
 /** Pide permiso, se suscribe y guarda la suscripción en Supabase. */
 export const enablePush = async (): Promise<PushResult> => {
   if (!pushSupported()) return { ok: false, reason: "unsupported" };
@@ -37,13 +45,19 @@ export const enablePush = async (): Promise<PushResult> => {
   if (permission !== "granted") return { ok: false, reason: "denied" };
 
   try {
-    const reg = await navigator.serviceWorker.ready;
+    // Timeout de 12s — en iOS el SW puede tardar en activarse
+    const reg = await withTimeout(navigator.serviceWorker.ready, 12000, "serviceWorker.ready");
+
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapid),
-      });
+      sub = await withTimeout(
+        reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapid),
+        }),
+        12000,
+        "pushManager.subscribe"
+      );
     }
 
     const code = ensureCode();

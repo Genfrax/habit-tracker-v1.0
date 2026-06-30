@@ -35,8 +35,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: data.body,
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: "/apple-touch-icon.png",
+    badge: "/apple-touch-icon.png",
     vibrate: [80, 40, 80],
     tag: data.tag || "habit-reminder",
     data: data.url || "/",

@@ -15,6 +15,7 @@ export function SyncSheet() {
   const [copied, setCopied] = useState(false);
   const [perm, setPerm] = useState<string>("default");
   const [busy, setBusy] = useState(false);
+  const [testBusy, setTestBusy] = useState(false);
   const configured = isSyncConfigured();
   const pushToast = useToastStore((s) => s.push);
 
@@ -52,6 +53,28 @@ export function SyncSheet() {
     setTimeout(() => window.location.reload(), 600);
   };
 
+  const handleTestPush = async () => {
+    setTestBusy(true);
+    try {
+      const res = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.sent > 0) {
+        pushToast("Notificación de prueba enviada", "success");
+      } else if (data.error) {
+        pushToast(`Error: ${data.error}`, "danger");
+      } else {
+        pushToast("No se encontraron suscripciones activas", "danger");
+      }
+    } catch {
+      pushToast("Error al enviar prueba", "danger");
+    }
+    setTestBusy(false);
+  };
+
   const handleEnablePush = async () => {
     setBusy(true);
     const res = await enablePush();
@@ -66,7 +89,8 @@ export function SyncSheet() {
     } else if (res.reason === "no-config") {
       pushToast("Falta configurar el servidor", "danger");
     } else {
-      pushToast("No se pudo activar", "danger");
+      const detail = "detail" in res ? res.detail : undefined;
+      pushToast(detail ? `Error: ${detail}` : "No se pudo activar", "danger");
     }
   };
 
@@ -190,9 +214,29 @@ export function SyncSheet() {
                   <div className="flex flex-col gap-2 border-t border-ink-100 pt-5">
                     <span className="text-sm font-medium text-ink-700">Notificaciones</span>
                     {perm === "granted" ? (
-                      <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                        <Check size={18} weight="bold" />
-                        Activadas en este dispositivo.
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                          <Check size={18} weight="bold" />
+                          Activadas en este dispositivo.
+                        </div>
+                        <button
+                          onClick={handleTestPush}
+                          disabled={testBusy || !configured}
+                          className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white text-[14px] font-medium text-ink-700 transition-all duration-150 hover:bg-ink-50 active:scale-[0.98] disabled:opacity-40"
+                        >
+                          {testBusy ? (
+                            <motion.span
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
+                              className="block h-4 w-4 rounded-full border-2 border-ink-300 border-t-ink-700"
+                            />
+                          ) : (
+                            <>
+                              <BellRinging size={16} weight="bold" />
+                              Enviar notificación de prueba
+                            </>
+                          )}
+                        </button>
                       </div>
                     ) : (
                       <button
@@ -215,8 +259,7 @@ export function SyncSheet() {
                       </button>
                     )}
                     <p className="text-xs text-ink-400">
-                      En iPhone debes abrir la app desde el ícono de la pantalla de inicio
-                      (no desde Safari) para que funcionen.
+                      Abre la app desde el ícono en pantalla de inicio (no desde Safari).
                     </p>
                   </div>
                 </div>
