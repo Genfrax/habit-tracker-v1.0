@@ -20,6 +20,7 @@ export function SyncSheet() {
   const [copied, setCopied] = useState(false);
   const [perm, setPerm] = useState<string>("default");
   const [testBusy, setTestBusy] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
   const configured = isSyncConfigured();
   const pushToast = useToastStore((s) => s.push);
 
@@ -61,6 +62,31 @@ export function SyncSheet() {
     setStoredCode(next);
     pushToast("Aplicando código…", "success");
     setTimeout(() => window.location.reload(), 600);
+  };
+
+  const handleTestReminder = async () => {
+    setReminderBusy(true);
+    try {
+      const res = await fetch("/api/reminders/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, force: true }),
+      });
+      const data = await res.json();
+      const r = data.results?.[0];
+      if (!r) {
+        pushToast(data.error || "Sin resultado del servidor", "danger");
+      } else if (r.sent > 0) {
+        pushToast(`Recordatorio enviado (${r.sent})`, "success");
+      } else if (r.subscripciones === 0) {
+        pushToast("Este código no tiene notificaciones activas", "danger");
+      } else {
+        pushToast("No hay hábitos pendientes hoy para recordar", "default");
+      }
+    } catch {
+      pushToast("Error al probar el recordatorio", "danger");
+    }
+    setReminderBusy(false);
   };
 
   const handleTest = async () => {
@@ -239,6 +265,27 @@ export function SyncSheet() {
                         </>
                       )}
                     </button>
+
+                    {perm === "granted" && (
+                      <button
+                        onClick={handleTestReminder}
+                        disabled={reminderBusy || !configured}
+                        className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white text-[14px] font-medium text-ink-700 transition-all duration-150 hover:bg-ink-50 active:scale-[0.98] disabled:opacity-40"
+                      >
+                        {reminderBusy ? (
+                          <motion.span
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
+                            className="block h-4 w-4 rounded-full border-2 border-ink-300 border-t-ink-700"
+                          />
+                        ) : (
+                          <>
+                            <BellRinging size={16} weight="bold" />
+                            Probar recordatorio de hábito ahora
+                          </>
+                        )}
+                      </button>
+                    )}
 
                     <p className="text-xs text-ink-400">
                       En iPhone abre la app desde el ícono de la pantalla de inicio

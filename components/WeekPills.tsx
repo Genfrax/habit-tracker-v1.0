@@ -17,7 +17,7 @@ export const WeekPills = memo(function WeekPills({ completion, scheduled }: Week
   const todayIdx = (new Date().getDay() + 6) % 7;
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="grid w-full grid-cols-7 gap-1">
       {DAY_LABELS.map((label, i) => {
         const isToday = i === todayIdx;
         const isDone = completion[(i + 1) % 7];
@@ -27,7 +27,7 @@ export const WeekPills = memo(function WeekPills({ completion, scheduled }: Week
           <div key={i} className="flex flex-col items-center gap-1">
             <span
               className={clsx(
-                "text-[10px] font-medium tracking-wide",
+                "text-[10px] font-medium leading-none tracking-wide",
                 isToday ? "text-accent" : isScheduled ? "text-ink-500" : "text-ink-300"
               )}
             >

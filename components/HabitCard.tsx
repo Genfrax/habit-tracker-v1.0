@@ -66,9 +66,9 @@ export function HabitCard({ habit, index }: HabitCardProps) {
           <MarkCircle active={stats.completed} pulseKey={pulseKey} onClick={handleMark} />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 pr-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -105,20 +105,22 @@ export function HabitCard({ habit, index }: HabitCardProps) {
                 ) : null}
               </div>
             </div>
-            <StreakFlame count={stats.streak} active={stats.completed && stats.streak > 0} />
+
+            {/* Cluster derecho: racha + eliminar (uno al lado del otro, sin encimar) */}
+            <div className="flex shrink-0 items-center gap-1.5">
+              <StreakFlame count={stats.streak} active={stats.completed && stats.streak > 0} />
+              <button
+                onClick={handleDelete}
+                aria-label="Eliminar hábito"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-ink-300 transition-all duration-150 hover:bg-flame/10 hover:text-flame active:scale-90 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+              >
+                <Trash size={16} weight="bold" />
+              </button>
+            </div>
           </div>
 
           <WeekPills completion={stats.weekCompletion} scheduled={stats.scheduledWeek} />
         </div>
-
-        {/* Delete — esquina inferior derecha, lejos del flame */}
-        <button
-          onClick={handleDelete}
-          aria-label="Eliminar hábito"
-          className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full text-ink-300 opacity-0 transition-all duration-150 hover:bg-flame/10 hover:text-flame focus-visible:opacity-100 group-hover:opacity-100 max-md:opacity-50"
-        >
-          <Trash size={16} weight="bold" />
-        </button>
       </motion.div>
     </motion.article>
   );

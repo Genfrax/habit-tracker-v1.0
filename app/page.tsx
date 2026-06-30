@@ -4,11 +4,12 @@ import { CreateHabit } from "@/components/CreateHabit";
 import { Toaster } from "@/components/Toaster";
 import { Celebration } from "@/components/Celebration";
 import { SyncManager } from "@/components/SyncManager";
+import { APP_VERSION } from "@/lib/version";
 
 export default function HomePage() {
   return (
     <>
-      <div className="flex min-h-[100dvh] w-full flex-col gap-8 px-5 py-8 pb-28 pr-[12vw] md:mx-auto md:max-w-[640px] md:pr-5 md:px-8 md:py-14">
+      <div className="flex min-h-[100dvh] w-full flex-col gap-8 py-8 pb-28 pl-5 pr-[8vw] md:mx-auto md:max-w-[640px] md:px-8 md:py-14">
         <Header />
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between px-1">
@@ -27,7 +28,7 @@ export default function HomePage() {
             Los hábitos de Genaro Escobar
           </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-300">
-            Hábitos · v0.2
+            Hábitos · v{APP_VERSION}
           </span>
         </footer>
       </div>
