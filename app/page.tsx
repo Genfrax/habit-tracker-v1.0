@@ -9,7 +9,7 @@ import { APP_VERSION } from "@/lib/version";
 export default function HomePage() {
   return (
     <>
-      <div className="flex min-h-[100dvh] w-full flex-col gap-8 py-8 pb-28 pl-5 pr-[8vw] md:mx-auto md:max-w-[640px] md:px-8 md:py-14">
+      <div className="flex min-h-[100dvh] w-full flex-col gap-8 py-8 pb-28 pl-6 pr-[9vw] md:mx-auto md:max-w-[640px] md:px-8 md:py-14">
         <Header />
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between px-1">
