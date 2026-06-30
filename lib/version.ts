@@ -4,4 +4,5 @@
 //  0.3.0 — código editable, prueba local+servidor, recordatorios robustos
 //  0.3.1 — fix tarjeta (alineación días + botón eliminar) y márgenes
 //  0.3.2 — service worker seguro (arregla pantalla rota tras deploy)
-export const APP_VERSION = "0.3.2";
+//  0.3.3 — página /reset.html para limpiar el service worker atascado
+export const APP_VERSION = "0.3.3";
