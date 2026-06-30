@@ -4,7 +4,7 @@ const KEY = "habitos-sync-code";
 // Sin caracteres ambiguos (0/O, 1/I/L)
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-/** Genera un código tipo "K7P2-9QXM" */
+/** Genera un código aleatorio tipo "K7P29QXM" (8 caracteres) */
 export const generateCode = (): string => {
   let raw = "";
   const arr = new Uint32Array(8);
@@ -14,15 +14,20 @@ export const generateCode = (): string => {
   } else {
     for (let i = 0; i < 8; i++) raw += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
   }
-  return `${raw.slice(0, 4)}-${raw.slice(4)}`;
+  return raw;
 };
 
+/** Normaliza: mayúsculas, solo letras/números, máx 24 */
 export const normalizeCode = (input: string): string =>
-  input.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  input.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 24);
 
+/** ¿Es un código válido? (mínimo 4 caracteres) */
+export const isValidCode = (input: string): boolean => normalizeCode(input).length >= 4;
+
+/** Para mostrar: agrupa los códigos de 8 como XXXX-XXXX; otros se muestran tal cual */
 export const formatCode = (raw: string): string => {
   const n = normalizeCode(raw);
-  return n.length > 4 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
+  return n.length === 8 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
 };
 
 export const getStoredCode = (): string | null => {

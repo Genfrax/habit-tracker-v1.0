@@ -3,11 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
 // ── Helpers de tiempo conscientes de zona horaria ────────────────
-type Now = { dateKey: string; hhmm: string; weekday: number };
+type Now = { dateKey: string; hhmm: string; weekday: number; minutes: number };
 
 const WD: Record<string, number> = {
   Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
 };
+
+// Ventana de tolerancia: si el cron se atrasa unos segundos, igual envía.
+const WINDOW_MIN = 2;
 
 function nowInTz(tz: string): Now {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -24,11 +27,24 @@ function nowInTz(tz: string): Now {
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   let hour = get("hour");
   if (hour === "24") hour = "00";
+  const h = parseInt(hour, 10);
+  const m = parseInt(get("minute"), 10);
   return {
     dateKey: `${get("year")}-${get("month")}-${get("day")}`,
     hhmm: `${hour}:${get("minute")}`,
     weekday: WD[get("weekday")] ?? new Date().getDay(),
+    minutes: h * 60 + m,
   };
+}
+
+/** ¿La hora del hábito cae dentro de la ventana [now-2min, now]? */
+function timeMatches(habitTime: string | undefined, now: Now): boolean {
+  if (!habitTime) return false;
+  const [hh, mm] = habitTime.split(":").map((n) => parseInt(n, 10));
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return false;
+  const habitMinutes = hh * 60 + mm;
+  const diff = now.minutes - habitMinutes;
+  return diff >= 0 && diff <= WINDOW_MIN;
 }
 
 type Habit = {
@@ -90,7 +106,7 @@ export default async () => {
 
     const dueNow = habits.filter(
       (h) =>
-        h.time === now.hhmm &&
+        timeMatches(h.time, now) &&
         isDueOn(h, now) &&
         !(h.completions || []).includes(now.dateKey)
     );

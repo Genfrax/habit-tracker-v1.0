@@ -33,6 +33,28 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise
     ),
   ]);
 
+/**
+ * Muestra una notificación LOCAL (desde el dispositivo, sin servidor).
+ * Es el mejor diagnóstico: si esto se ve, el dispositivo puede mostrar
+ * notificaciones; si falla, el problema es permiso/instalación.
+ */
+export const localTestNotification = async (): Promise<PushResult> => {
+  if (!pushSupported()) return { ok: false, reason: "unsupported" };
+  if (Notification.permission !== "granted") return { ok: false, reason: "denied" };
+  try {
+    const reg = await withTimeout(navigator.serviceWorker.ready, 8000, "serviceWorker.ready");
+    await reg.showNotification("Prueba ✓", {
+      body: "Si ves esto, las notificaciones funcionan en este dispositivo.",
+      icon: "/apple-touch-icon.png",
+      badge: "/apple-touch-icon.png",
+      tag: "local-test",
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: "error", detail: e instanceof Error ? e.message : String(e) };
+  }
+};
+
 /** Pide permiso, se suscribe y guarda la suscripción en Supabase. */
 export const enablePush = async (): Promise<PushResult> => {
   if (!pushSupported()) return { ok: false, reason: "unsupported" };

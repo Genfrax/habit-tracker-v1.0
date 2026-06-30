@@ -2,25 +2,31 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Gear, X, Copy, Check, BellRinging, DeviceMobile, CloudCheck, CloudSlash } from "@phosphor-icons/react";
+import { Gear, X, Copy, Check, BellRinging, CloudCheck, CloudSlash } from "@phosphor-icons/react";
 import { isSyncConfigured } from "@/lib/supabase";
-import { ensureCode, formatCode, normalizeCode, setStoredCode } from "@/lib/syncCode";
-import { enablePush, notificationPermission, pushSupported } from "@/lib/push";
+import { ensureCode, formatCode, normalizeCode, isValidCode, setStoredCode } from "@/lib/syncCode";
+import {
+  enablePush,
+  notificationPermission,
+  pushSupported,
+  localTestNotification,
+} from "@/lib/push";
 import { useToastStore } from "@/lib/toastStore";
 
 export function SyncSheet() {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
-  const [linkInput, setLinkInput] = useState("");
+  const [codeInput, setCodeInput] = useState("");
   const [copied, setCopied] = useState(false);
   const [perm, setPerm] = useState<string>("default");
-  const [busy, setBusy] = useState(false);
   const [testBusy, setTestBusy] = useState(false);
   const configured = isSyncConfigured();
   const pushToast = useToastStore((s) => s.push);
 
   useEffect(() => {
-    setCode(ensureCode());
+    const c = ensureCode();
+    setCode(c);
+    setCodeInput(formatCode(c));
     setPerm(notificationPermission());
   }, []);
 
@@ -42,19 +48,50 @@ export function SyncSheet() {
     }
   };
 
-  const linkDevice = () => {
-    const n = normalizeCode(linkInput);
-    if (n.length !== 8) {
-      pushToast("El código debe tener 8 caracteres", "danger");
+  const saveCode = () => {
+    if (!isValidCode(codeInput)) {
+      pushToast("El código debe tener al menos 4 caracteres", "danger");
       return;
     }
-    setStoredCode(n);
-    pushToast("Vinculando…", "success");
+    const next = normalizeCode(codeInput);
+    if (next === code) {
+      pushToast("Ya estás usando este código", "default");
+      return;
+    }
+    setStoredCode(next);
+    pushToast("Aplicando código…", "success");
     setTimeout(() => window.location.reload(), 600);
   };
 
-  const handleTestPush = async () => {
+  const handleTest = async () => {
     setTestBusy(true);
+
+    // 1) Asegurar permiso + suscripción
+    if (notificationPermission() !== "granted") {
+      const en = await enablePush();
+      setPerm(notificationPermission());
+      if (!en.ok) {
+        const detail = "detail" in en ? en.detail : undefined;
+        if (en.reason === "denied") pushToast("Permiso denegado", "danger");
+        else if (en.reason === "unsupported")
+          pushToast("Este navegador no soporta notificaciones", "danger");
+        else if (en.reason === "no-config") pushToast("Falta configurar el servidor", "danger");
+        else pushToast(detail ? `Error: ${detail}` : "No se pudo activar", "danger");
+        setTestBusy(false);
+        return;
+      }
+    }
+
+    // 2) Prueba LOCAL (instantánea, sin servidor)
+    const local = await localTestNotification();
+    if (local.ok) {
+      pushToast("Notificación local enviada", "success");
+    } else {
+      const detail = "detail" in local ? local.detail : local.reason;
+      pushToast(`Local falló: ${detail}`, "danger");
+    }
+
+    // 3) Prueba desde el SERVIDOR (push real)
     try {
       const res = await fetch("/api/push/test", {
         method: "POST",
@@ -63,35 +100,15 @@ export function SyncSheet() {
       });
       const data = await res.json();
       if (data.sent > 0) {
-        pushToast("Notificación de prueba enviada", "success");
-      } else if (data.error) {
-        pushToast(`Error: ${data.error}`, "danger");
+        pushToast("Servidor: notificación enviada", "success");
       } else {
-        pushToast("No se encontraron suscripciones activas", "danger");
+        pushToast(`Servidor: ${data.error || "sin suscripciones"}`, "danger");
       }
     } catch {
-      pushToast("Error al enviar prueba", "danger");
+      pushToast("Servidor: error de red", "danger");
     }
-    setTestBusy(false);
-  };
 
-  const handleEnablePush = async () => {
-    setBusy(true);
-    const res = await enablePush();
-    setBusy(false);
-    setPerm(notificationPermission());
-    if (res.ok) {
-      pushToast("Notificaciones activadas", "success");
-    } else if (res.reason === "denied") {
-      pushToast("Permiso de notificaciones denegado", "danger");
-    } else if (res.reason === "unsupported") {
-      pushToast("Tu navegador no soporta notificaciones", "danger");
-    } else if (res.reason === "no-config") {
-      pushToast("Falta configurar el servidor", "danger");
-    } else {
-      const detail = "detail" in res ? res.detail : undefined;
-      pushToast(detail ? `Error: ${detail}` : "No se pudo activar", "danger");
-    }
+    setTestBusy(false);
   };
 
   return (
@@ -157,109 +174,75 @@ export function SyncSheet() {
                     </p>
                   </div>
 
-                  {/* Tu código */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-ink-700">Tu código</span>
-                    <button
-                      onClick={copyCode}
-                      className="group flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-4 transition-colors duration-150 hover:bg-ink-50"
-                    >
-                      <span className="font-mono text-2xl font-semibold tracking-[0.15em] text-ink-900">
-                        {formatCode(code)}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-ink-400 group-hover:text-accent">
-                        {copied ? (
-                          <>
-                            <Check size={16} weight="bold" /> Copiado
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={16} weight="bold" /> Copiar
-                          </>
-                        )}
-                      </span>
-                    </button>
-                    <p className="text-xs text-ink-400">
-                      Escribe este código en tu otro dispositivo para ver los mismos hábitos.
-                    </p>
-                  </div>
-
-                  {/* Vincular */}
+                  {/* Código de sincronización (editable) */}
                   <div className="flex flex-col gap-2">
                     <span className="text-sm font-medium text-ink-700">
-                      Vincular este dispositivo a otro
+                      Código de sincronización
                     </span>
                     <div className="flex gap-2">
                       <input
-                        value={linkInput}
-                        onChange={(e) => setLinkInput(e.target.value.toUpperCase())}
-                        placeholder="Ej. K7P2-9QXM"
-                        className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-3 font-mono text-[15px] tracking-wider text-ink-900 outline-none transition-all duration-150 placeholder:text-ink-300 placeholder:tracking-normal focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+                        value={codeInput}
+                        onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                        placeholder="Ej. GENARO"
+                        className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-3 font-mono text-[17px] font-semibold tracking-wider text-ink-900 outline-none transition-all duration-150 placeholder:font-normal placeholder:text-ink-300 focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
                       />
                       <button
-                        onClick={linkDevice}
-                        disabled={!configured}
-                        className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-accent px-4 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#0a5cef] active:scale-95 disabled:opacity-40"
+                        onClick={copyCode}
+                        aria-label="Copiar"
+                        className="flex shrink-0 items-center justify-center rounded-2xl border border-ink-100 bg-white px-3 text-ink-500 transition-colors duration-150 hover:text-accent active:scale-95"
                       >
-                        <DeviceMobile size={18} weight="bold" />
-                        Vincular
+                        {copied ? <Check size={18} weight="bold" /> : <Copy size={18} weight="bold" />}
                       </button>
                     </div>
-                    <p className="text-xs text-amber-600">
-                      Reemplazará los hábitos de este dispositivo por los del código.
+                    <button
+                      onClick={saveCode}
+                      disabled={!configured}
+                      className="flex h-11 items-center justify-center rounded-2xl bg-accent text-[14px] font-semibold text-white transition-all duration-150 hover:bg-[#0a5cef] active:scale-[0.98] disabled:opacity-40"
+                    >
+                      Usar este código
+                    </button>
+                    <p className="text-xs text-ink-400">
+                      Usa el <strong>mismo código</strong> en tu iPhone y tu Mac para ver
+                      los mismos hábitos. Ponle algo fácil de recordar (tu nombre). Si un
+                      dispositivo lo olvida, solo vuelve a escribirlo aquí.
                     </p>
                   </div>
 
                   {/* Notificaciones */}
                   <div className="flex flex-col gap-2 border-t border-ink-100 pt-5">
                     <span className="text-sm font-medium text-ink-700">Notificaciones</span>
-                    {perm === "granted" ? (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                          <Check size={18} weight="bold" />
-                          Activadas en este dispositivo.
-                        </div>
-                        <button
-                          onClick={handleTestPush}
-                          disabled={testBusy || !configured}
-                          className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white text-[14px] font-medium text-ink-700 transition-all duration-150 hover:bg-ink-50 active:scale-[0.98] disabled:opacity-40"
-                        >
-                          {testBusy ? (
-                            <motion.span
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
-                              className="block h-4 w-4 rounded-full border-2 border-ink-300 border-t-ink-700"
-                            />
-                          ) : (
-                            <>
-                              <BellRinging size={16} weight="bold" />
-                              Enviar notificación de prueba
-                            </>
-                          )}
-                        </button>
+
+                    {perm === "granted" && (
+                      <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
+                        <Check size={16} weight="bold" />
+                        Permiso concedido en este dispositivo.
                       </div>
-                    ) : (
-                      <button
-                        onClick={handleEnablePush}
-                        disabled={busy || !pushSupported() || !configured}
-                        className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink-900 text-[15px] font-semibold text-white transition-all duration-150 hover:bg-ink-800 active:scale-[0.98] disabled:opacity-40"
-                      >
-                        {busy ? (
-                          <motion.span
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
-                            className="block h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
-                          />
-                        ) : (
-                          <>
-                            <BellRinging size={18} weight="bold" />
-                            Activar notificaciones
-                          </>
-                        )}
-                      </button>
                     )}
+
+                    <button
+                      onClick={handleTest}
+                      disabled={testBusy || !pushSupported() || !configured}
+                      className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink-900 text-[15px] font-semibold text-white transition-all duration-150 hover:bg-ink-800 active:scale-[0.98] disabled:opacity-40"
+                    >
+                      {testBusy ? (
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
+                          className="block h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
+                        />
+                      ) : (
+                        <>
+                          <BellRinging size={18} weight="bold" />
+                          {perm === "granted"
+                            ? "Enviar notificación de prueba"
+                            : "Activar y probar notificaciones"}
+                        </>
+                      )}
+                    </button>
+
                     <p className="text-xs text-ink-400">
-                      Abre la app desde el ícono en pantalla de inicio (no desde Safari).
+                      En iPhone abre la app desde el ícono de la pantalla de inicio
+                      (no desde Safari). Verás dos avisos: uno local y uno del servidor.
                     </p>
                   </div>
                 </div>
