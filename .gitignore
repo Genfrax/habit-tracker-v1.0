@@ -1,2 +1,5 @@
 /node_modules
 /ubersicht
+
+# Variables de entorno con secretos — nunca subir a git
+.env*

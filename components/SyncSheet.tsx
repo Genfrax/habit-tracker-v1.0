@@ -80,6 +80,10 @@ export function SyncSheet() {
         pushToast(`Recordatorio enviado (${r.sent})`, "success");
       } else if (r.subscripciones === 0) {
         pushToast("Este código no tiene notificaciones activas", "danger");
+      } else if (
+        (r.candidates as { willSend: boolean }[] | undefined)?.some((c) => c.willSend)
+      ) {
+        pushToast("El servidor no pudo entregar la notificación", "danger");
       } else {
         pushToast("No hay hábitos pendientes hoy para recordar", "default");
       }
