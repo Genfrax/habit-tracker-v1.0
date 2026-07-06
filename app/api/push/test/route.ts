@@ -46,15 +46,18 @@ export async function POST(req: NextRequest) {
 
   for (const s of subs) {
     try {
-      await webpush.sendNotification(s.subscription as webpush.PushSubscription, payload);
+      await webpush.sendNotification(s.subscription as webpush.PushSubscription, payload, {
+        timeout: 8000,
+      });
       sent++;
     } catch (e) {
-      const code2 = (e as { statusCode?: number })?.statusCode;
-      if (code2 === 404 || code2 === 410) {
+      const err = e as { statusCode?: number; body?: string; message?: string };
+      if (err.statusCode === 404 || err.statusCode === 410) {
         await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
         errors.push(`Suscripción expirada, eliminada: ${s.endpoint.slice(0, 40)}...`);
       } else {
-        errors.push(e instanceof Error ? e.message : String(e));
+        const detail = [err.statusCode, err.message, err.body].filter(Boolean).join(" — ");
+        errors.push(detail || String(e));
       }
     }
   }

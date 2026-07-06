@@ -70,12 +70,31 @@ export const enablePush = async (): Promise<PushResult> => {
     // Timeout de 12s — en iOS el SW puede tardar en activarse
     const reg = await withTimeout(navigator.serviceWorker.ready, 12000, "serviceWorker.ready");
 
+    const wantedKey = urlBase64ToUint8Array(vapid);
+
     let sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      // Si la suscripción existente fue creada con OTRA clave VAPID (p. ej.
+      // tras rotar las claves), el servidor no puede usarla: hay que renovarla.
+      const currentKey = sub.options?.applicationServerKey
+        ? new Uint8Array(sub.options.applicationServerKey)
+        : null;
+      const sameKey =
+        currentKey !== null &&
+        currentKey.length === wantedKey.length &&
+        currentKey.every((b, i) => b === wantedKey[i]);
+      if (!sameKey) {
+        try {
+          await sub.unsubscribe();
+        } catch {}
+        sub = null;
+      }
+    }
     if (!sub) {
       sub = await withTimeout(
         reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapid),
+          applicationServerKey: wantedKey,
         }),
         12000,
         "pushManager.subscribe"

@@ -127,7 +127,9 @@ export async function POST(req: NextRequest) {
       .select("endpoint,subscription")
       .eq("code", space.code);
 
-    let sent = 0;
+    // Todos los envíos en paralelo y con timeout: una suscripción muerta
+    // que no responde ya no puede colgar la función entera.
+    const sendTasks: Promise<boolean>[] = [];
     for (const habit of toSend) {
       // En modo cron deduplicamos; en prueba manual (force) no, para poder repetir
       if (!force) {
@@ -143,17 +145,23 @@ export async function POST(req: NextRequest) {
         url: "/",
       });
       for (const s of subs || []) {
-        try {
-          await webpush.sendNotification(s.subscription as webpush.PushSubscription, payload);
-          sent++;
-        } catch (e) {
-          const code2 = (e as { statusCode?: number })?.statusCode;
-          if (code2 === 404 || code2 === 410) {
-            await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
-          }
-        }
+        sendTasks.push(
+          webpush
+            .sendNotification(s.subscription as webpush.PushSubscription, payload, {
+              timeout: 8000,
+            })
+            .then(() => true)
+            .catch(async (e) => {
+              const code2 = (e as { statusCode?: number })?.statusCode;
+              if (code2 === 404 || code2 === 410) {
+                await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
+              }
+              return false;
+            })
+        );
       }
     }
+    const sent = (await Promise.all(sendTasks)).filter(Boolean).length;
 
     results.push({
       code: space.code,
