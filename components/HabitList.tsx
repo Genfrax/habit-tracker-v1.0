@@ -18,7 +18,7 @@ export function HabitList() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="h-[112px] animate-pulse rounded-4xl border border-ink-100 bg-white/60"
+            className="h-[112px] animate-pulse rounded-4xl border border-ink-100 bg-surface/60"
           />
         ))}
       </div>
@@ -30,7 +30,7 @@ export function HabitList() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center gap-3 rounded-4xl border border-dashed border-ink-200 bg-white/60 px-6 py-14 text-center"
+        className="flex flex-col items-center gap-3 rounded-4xl border border-dashed border-ink-200 bg-surface/60 px-6 py-14 text-center"
       >
         <div className="font-mono text-xs uppercase tracking-[0.18em] text-ink-400">
           Sin hábitos todavía

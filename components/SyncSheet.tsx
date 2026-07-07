@@ -2,9 +2,26 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Gear, X, Copy, Check, BellRinging, CloudCheck, CloudSlash } from "@phosphor-icons/react";
+import {
+  Gear,
+  X,
+  Copy,
+  Check,
+  BellRinging,
+  CloudCheck,
+  CloudSlash,
+  Sun,
+  Moon,
+  Devices,
+} from "@phosphor-icons/react";
 import { isSyncConfigured } from "@/lib/supabase";
 import { ensureCode, formatCode, normalizeCode, isValidCode, setStoredCode } from "@/lib/syncCode";
+import {
+  type ThemeMode,
+  getThemeMode,
+  setThemeMode,
+  watchSystemTheme,
+} from "@/lib/theme";
 import {
   enablePush,
   notificationPermission,
@@ -21,6 +38,7 @@ export function SyncSheet() {
   const [perm, setPerm] = useState<string>("default");
   const [testBusy, setTestBusy] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>("system");
   const configured = isSyncConfigured();
   const pushToast = useToastStore((s) => s.push);
 
@@ -29,7 +47,14 @@ export function SyncSheet() {
     setCode(c);
     setCodeInput(formatCode(c));
     setPerm(notificationPermission());
+    setTheme(getThemeMode());
+    return watchSystemTheme();
   }, []);
+
+  const pickTheme = (mode: ThemeMode) => {
+    setTheme(mode);
+    setThemeMode(mode);
+  };
 
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
@@ -146,7 +171,7 @@ export function SyncSheet() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Sincronización y notificaciones"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-ink-100 bg-white text-ink-500 shadow-soft transition-all duration-150 hover:text-ink-800 active:scale-95"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-ink-100 bg-surface text-ink-500 shadow-soft transition-all duration-150 hover:text-ink-800 active:scale-95"
       >
         <Gear size={20} weight="bold" />
       </button>
@@ -160,7 +185,7 @@ export function SyncSheet() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-40 bg-ink-900/40 backdrop-blur-[2px]"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
             />
             <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-4">
               <motion.div
@@ -168,7 +193,7 @@ export function SyncSheet() {
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={{ y: 30, opacity: 0, scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                className="flex max-h-[90dvh] w-full max-w-[460px] flex-col overflow-hidden rounded-5xl border border-ink-100 bg-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.35)]"
+                className="flex max-h-[90dvh] w-full max-w-[460px] flex-col overflow-hidden rounded-5xl border border-ink-100 bg-surface shadow-[0_30px_70px_-20px_rgba(0,0,0,0.35)]"
               >
                 <div className="flex items-center justify-between px-6 pt-6">
                   <h2 className="text-lg font-semibold tracking-tight text-ink-900">
@@ -188,8 +213,8 @@ export function SyncSheet() {
                   <div
                     className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
                       configured
-                        ? "border-emerald-200 bg-emerald-50"
-                        : "border-amber-200 bg-amber-50"
+                        ? "border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/10"
+                        : "border-amber-200 bg-amber-50 dark:border-amber-500/25 dark:bg-amber-500/10"
                     }`}
                   >
                     {configured ? (
@@ -204,6 +229,37 @@ export function SyncSheet() {
                     </p>
                   </div>
 
+                  {/* Apariencia: claro / oscuro / sistema */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-ink-700">Apariencia</span>
+                    <div className="flex gap-2">
+                      {(
+                        [
+                          { id: "light", label: "Claro", icon: Sun },
+                          { id: "dark", label: "Oscuro", icon: Moon },
+                          { id: "system", label: "Sistema", icon: Devices },
+                        ] as const
+                      ).map(({ id, label, icon: Icon }) => (
+                        <button
+                          key={id}
+                          onClick={() => pickTheme(id)}
+                          className={`flex h-11 flex-1 items-center justify-center gap-1.5 rounded-2xl border text-[13px] font-semibold transition-all duration-150 active:scale-[0.97] ${
+                            theme === id
+                              ? "border-accent bg-accent text-white shadow-[0_4px_12px_-4px_rgba(0,102,255,0.5)]"
+                              : "border-ink-100 bg-surface text-ink-600 hover:bg-ink-50"
+                          }`}
+                        >
+                          <Icon size={16} weight="bold" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-ink-400">
+                      Con "Sistema" la app sigue el modo claro/oscuro de tu
+                      dispositivo automáticamente.
+                    </p>
+                  </div>
+
                   {/* Código de sincronización (editable) */}
                   <div className="flex flex-col gap-2">
                     <span className="text-sm font-medium text-ink-700">
@@ -214,12 +270,12 @@ export function SyncSheet() {
                         value={codeInput}
                         onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
                         placeholder="Ej. GENARO"
-                        className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-3 font-mono text-[17px] font-semibold tracking-wider text-ink-900 outline-none transition-all duration-150 placeholder:font-normal placeholder:text-ink-300 focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+                        className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-3 font-mono text-[17px] font-semibold tracking-wider text-ink-900 outline-none transition-all duration-150 placeholder:font-normal placeholder:text-ink-300 focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent/20"
                       />
                       <button
                         onClick={copyCode}
                         aria-label="Copiar"
-                        className="flex shrink-0 items-center justify-center rounded-2xl border border-ink-100 bg-white px-3 text-ink-500 transition-colors duration-150 hover:text-accent active:scale-95"
+                        className="flex shrink-0 items-center justify-center rounded-2xl border border-ink-100 bg-surface px-3 text-ink-500 transition-colors duration-150 hover:text-accent active:scale-95"
                       >
                         {copied ? <Check size={18} weight="bold" /> : <Copy size={18} weight="bold" />}
                       </button>
@@ -243,7 +299,7 @@ export function SyncSheet() {
                     <span className="text-sm font-medium text-ink-700">Notificaciones</span>
 
                     {perm === "granted" && (
-                      <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
+                      <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-400">
                         <Check size={16} weight="bold" />
                         Permiso concedido en este dispositivo.
                       </div>
@@ -252,13 +308,13 @@ export function SyncSheet() {
                     <button
                       onClick={handleTest}
                       disabled={testBusy || !pushSupported() || !configured}
-                      className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink-900 text-[15px] font-semibold text-white transition-all duration-150 hover:bg-ink-800 active:scale-[0.98] disabled:opacity-40"
+                      className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-ink-900 text-[15px] font-semibold text-surface transition-all duration-150 hover:bg-ink-800 active:scale-[0.98] disabled:opacity-40"
                     >
                       {testBusy ? (
                         <motion.span
                           animate={{ rotate: 360 }}
                           transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
-                          className="block h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
+                          className="block h-5 w-5 rounded-full border-2 border-surface/30 border-t-surface"
                         />
                       ) : (
                         <>
@@ -274,7 +330,7 @@ export function SyncSheet() {
                       <button
                         onClick={handleTestReminder}
                         disabled={reminderBusy || !configured}
-                        className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white text-[14px] font-medium text-ink-700 transition-all duration-150 hover:bg-ink-50 active:scale-[0.98] disabled:opacity-40"
+                        className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-surface text-[14px] font-medium text-ink-700 transition-all duration-150 hover:bg-ink-50 active:scale-[0.98] disabled:opacity-40"
                       >
                         {reminderBusy ? (
                           <motion.span

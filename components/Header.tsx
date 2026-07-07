@@ -52,7 +52,7 @@ export function Header() {
       </div>
 
       {/* Progreso de hoy */}
-      <div className="rounded-4xl border border-ink-100 bg-white p-5 shadow-diffusion">
+      <div className="rounded-4xl border border-ink-100 bg-surface p-5 shadow-diffusion">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
             <span className="text-xs uppercase tracking-[0.18em] text-ink-400">
@@ -87,7 +87,7 @@ export function Header() {
       </div>
 
       {/* Esfuerzo (heatmap) */}
-      <div className="rounded-4xl border border-ink-100 bg-white p-5 shadow-diffusion">
+      <div className="rounded-4xl border border-ink-100 bg-surface p-5 shadow-diffusion">
         <div className="mb-4 flex items-center justify-between gap-4">
           <span className="text-xs uppercase tracking-[0.18em] text-ink-400">
             Tu esfuerzo

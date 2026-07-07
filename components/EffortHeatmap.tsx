@@ -12,8 +12,8 @@ interface EffortHeatmapProps {
 }
 
 const cellColor = (ratio: number, future: boolean): string => {
-  if (future) return "rgba(0,0,0,0.025)";
-  if (ratio === 0) return "#ececef";
+  if (future) return "var(--heat-future)";
+  if (ratio === 0) return "var(--heat-empty)";
   if (ratio <= 0.25) return "rgba(0,102,255,0.30)";
   if (ratio <= 0.5) return "rgba(0,102,255,0.50)";
   if (ratio <= 0.75) return "rgba(0,102,255,0.72)";

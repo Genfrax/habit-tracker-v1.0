@@ -6,7 +6,31 @@ export const runtime = "nodejs";
 
 type Now = { dateKey: string; hhmm: string; weekday: number; minutes: number };
 const WD: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-const WINDOW_MIN = 2;
+// El cron corre cada 5 min; la ventana de 4 min cubre todos los minutos
+// intermedios sin duplicar (la tabla sent_reminders deduplica por día).
+const WINDOW_MIN = 4;
+
+// ── Textos variados para las notificaciones ──
+// Se elige por hash(hábito + fecha): cambia cada día y entre hábitos.
+const BODIES = [
+  "Es hora de tus hábitos ⏰",
+  "¿Sos un vago? Todavía no hiciste esto 👀",
+  "Acordate que tenés esto pendiente",
+  "¿Ya saliste? 🏃",
+  "¿Ya lo hiciste?",
+  "No rompas la racha 🔥",
+  "Dale, son 5 minutos",
+  "Tu yo de mañana te lo va a agradecer",
+  "Hoy también cuenta ✨",
+  "Un tick más y la racha sigue viva",
+];
+
+// Hash determinístico simple (djb2) para elegir frase y horario.
+const hashStr = (s: string): number => {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h;
+};
 
 function nowInTz(tz: string): Now {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -32,8 +56,18 @@ function nowInTz(tz: string): Now {
   };
 }
 
-function timeMatches(habitTime: string | undefined, now: Now): boolean {
-  if (!habitTime) return false;
+// Hábitos SIN hora fija: se les asigna una hora pseudo-aleatoria del día
+// entre 08:00 y 20:59, distinta por hábito y por fecha (así los avisos no
+// llegan todos juntos ni siempre a la misma hora).
+function autoTimeFor(habitId: string, dateKey: string): string {
+  const mins = 8 * 60 + (hashStr(dateKey + "|" + habitId) % (13 * 60));
+  const hh = String(Math.floor(mins / 60)).padStart(2, "0");
+  const mm = String(mins % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function timeMatches(habit: Habit, now: Now): boolean {
+  const habitTime = habit.time || autoTimeFor(habit.id, now.dateKey);
   const [hh, mm] = habitTime.split(":").map((n) => parseInt(n, 10));
   if (Number.isNaN(hh) || Number.isNaN(mm)) return false;
   const diff = now.minutes - (hh * 60 + mm);
@@ -65,6 +99,42 @@ function isDueOn(h: Habit, now: Now): boolean {
   if (repeat === "monthly") return now.dateKey.slice(8, 10) === anchor.slice(8, 10);
   if (repeat === "yearly") return now.dateKey.slice(5) === anchor.slice(5);
   return true;
+}
+
+// Cuenta cuántos días programados seguidos (hacia atrás, sin contar hoy)
+// lleva el hábito SIN cumplirse. 0 = al día.
+function missedScheduledDays(h: Habit, now: Now): number {
+  const done = new Set(h.completions || []);
+  const base = new Date(`${now.dateKey}T00:00:00Z`);
+  let missed = 0;
+  for (let i = 1; i <= 30; i++) {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if (h.startDate && key < h.startDate) break;
+    if (h.createdAt && key < h.createdAt.slice(0, 10)) break;
+    const past: Now = {
+      dateKey: key,
+      hhmm: "00:00",
+      weekday: (((now.weekday - i) % 7) + 7) % 7,
+      minutes: 0,
+    };
+    if (isDueOn(h, past)) {
+      if (done.has(key)) break;
+      missed++;
+    }
+  }
+  return missed;
+}
+
+// Cuerpo de la notificación: si lleva 3+ días sin cumplirse, te lo canta;
+// si no, una frase que rota por día y por hábito.
+function bodyFor(h: Habit, now: Now): string {
+  const missed = missedScheduledDays(h, now);
+  if (missed >= 3) {
+    return `Hace ${missed} días que no cumplís este hábito 😬 ¿Hoy sí?`;
+  }
+  return BODIES[hashStr(h.id + "#" + now.dateKey) % BODIES.length];
 }
 
 export async function POST(req: NextRequest) {
@@ -105,10 +175,11 @@ export async function POST(req: NextRequest) {
     const candidates = habits.map((h) => {
       const due = isDueOn(h, now);
       const completed = (h.completions || []).includes(now.dateKey);
-      const matched = timeMatches(h.time, now);
+      const matched = timeMatches(h, now);
       return {
         name: h.name,
         time: h.time ?? null,
+        autoTime: h.time ? null : autoTimeFor(h.id, now.dateKey),
         dueToday: due,
         completedToday: completed,
         timeMatched: matched,
@@ -119,7 +190,7 @@ export async function POST(req: NextRequest) {
     const toSend = habits.filter((h) => {
       const due = isDueOn(h, now);
       const completed = (h.completions || []).includes(now.dateKey);
-      return due && !completed && (force || timeMatches(h.time, now));
+      return due && !completed && (force || timeMatches(h, now));
     });
 
     const { data: subs } = await supabase
@@ -140,7 +211,7 @@ export async function POST(req: NextRequest) {
       }
       const payload = JSON.stringify({
         title: habit.name,
-        body: "Es hora de tu hábito",
+        body: bodyFor(habit, now),
         tag: `habit-${habit.id}`,
         url: "/",
       });

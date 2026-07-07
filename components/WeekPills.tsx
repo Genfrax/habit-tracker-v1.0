@@ -33,19 +33,14 @@ export const WeekPills = memo(function WeekPills({ completion, scheduled }: Week
             >
               {label}
             </span>
-            <motion.div
-              animate={{
-                backgroundColor: isDone ? "#0066FF" : "#ffffff",
-                borderColor: isDone
-                  ? "#0066FF"
-                  : isScheduled
-                  ? "#0066FF"
-                  : "#ececef",
-                borderWidth: !isDone && isScheduled ? 2 : 1,
-              }}
-              transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            <div
               className={clsx(
-                "relative flex h-7 w-7 items-center justify-center rounded-full border",
+                "relative flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-200",
+                isDone
+                  ? "border border-accent bg-accent"
+                  : isScheduled
+                  ? "border-2 border-accent bg-surface"
+                  : "border border-ink-100 bg-surface",
                 isToday && isScheduled && !isDone && "ring-2 ring-accent/25"
               )}
             >
@@ -76,7 +71,7 @@ export const WeekPills = memo(function WeekPills({ completion, scheduled }: Week
               {!isDone && isScheduled && (
                 <span className="h-1.5 w-1.5 rounded-full bg-accent/50" aria-hidden />
               )}
-            </motion.div>
+            </div>
           </div>
         );
       })}

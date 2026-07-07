@@ -3,3 +3,9 @@
 
 # Variables de entorno con secretos — nunca subir a git
 .env*
+
+# Local Netlify folder
+.netlify
+
+# Build de Next.js (Netlify genera el suyo)
+/.next

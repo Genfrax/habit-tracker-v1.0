@@ -74,7 +74,7 @@ export function Celebration() {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", stiffness: 280, damping: 20 }}
-            className="relative flex flex-col items-center gap-3 rounded-5xl border border-white/60 bg-white/90 px-10 py-8 text-center shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+            className="relative flex flex-col items-center gap-3 rounded-5xl border border-surface/60 bg-surface/90 px-10 py-8 text-center shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)] backdrop-blur-xl"
           >
             <motion.div
               initial={{ scale: 0, rotate: -16 }}

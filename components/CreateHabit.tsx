@@ -127,14 +127,14 @@ export function CreateHabit() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={phase === "form" ? close : undefined}
-              className="fixed inset-0 z-40 bg-ink-900/40 backdrop-blur-[2px]"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
             />
 
             <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-4">
               <motion.div
                 layoutId="create-surface"
                 transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                className="relative flex max-h-[90dvh] ml-5 mr-[14vw] sm:w-full max-w-[460px] flex-col overflow-hidden rounded-5xl border border-ink-100 bg-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.35)] sm:mx-auto"
+                className="relative flex max-h-[90dvh] ml-5 mr-[14vw] sm:w-full max-w-[460px] flex-col overflow-hidden rounded-5xl border border-ink-100 bg-surface shadow-[0_30px_70px_-20px_rgba(0,0,0,0.35)] sm:mx-auto"
               >
                 <Confetti fire={phase === "success"} />
 
@@ -210,7 +210,7 @@ export function CreateHabit() {
                             }}
                             placeholder="Ej. Meditar 10 minutos"
                             maxLength={48}
-                            className={`w-full rounded-2xl border bg-ink-50/60 px-4 py-3 text-[15px] text-ink-900 outline-none transition-all duration-150 placeholder:text-ink-300 focus:bg-white ${
+                            className={`w-full rounded-2xl border bg-ink-50/60 px-4 py-3 text-[15px] text-ink-900 outline-none transition-all duration-150 placeholder:text-ink-300 focus:bg-surface ${
                               error
                                 ? "border-flame focus:ring-2 focus:ring-flame/30"
                                 : "border-ink-100 focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -316,7 +316,7 @@ export function CreateHabit() {
               className={`flex h-10 flex-1 items-center justify-center rounded-xl border text-sm font-semibold transition-all duration-150 active:scale-95 ${
                 active
                   ? "border-accent bg-accent text-white shadow-[0_4px_12px_-4px_rgba(0,102,255,0.5)]"
-                  : "border-ink-100 bg-white text-ink-400 hover:border-ink-200"
+                  : "border-ink-100 bg-surface text-ink-400 hover:border-ink-200"
               }`}
             >
               {label}
@@ -338,7 +338,7 @@ export function CreateHabit() {
                             type="time"
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
-                            className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-3 text-[15px] text-ink-900 outline-none transition-all duration-150 focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+                            className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-4 py-3 text-[15px] text-ink-900 outline-none transition-all duration-150 focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent/20"
                           />
                         </div>
 
@@ -353,7 +353,7 @@ export function CreateHabit() {
                               type="date"
                               value={startDate}
                               onChange={(e) => setStartDate(e.target.value)}
-                              className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-3 py-3 text-[14px] text-ink-900 outline-none transition-all duration-150 focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+                              className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-3 py-3 text-[14px] text-ink-900 outline-none transition-all duration-150 focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent/20"
                             />
                           </div>
                           <div className="flex flex-col gap-2">
@@ -366,7 +366,7 @@ export function CreateHabit() {
                               value={endDate}
                               min={startDate}
                               onChange={(e) => setEndDate(e.target.value)}
-                              className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-3 py-3 text-[14px] text-ink-900 outline-none transition-all duration-150 focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20"
+                              className="w-full rounded-2xl border border-ink-100 bg-ink-50/60 px-3 py-3 text-[14px] text-ink-900 outline-none transition-all duration-150 focus:border-accent focus:bg-surface focus:ring-2 focus:ring-accent/20"
                             />
                           </div>
                         </div>

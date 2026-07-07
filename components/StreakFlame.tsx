@@ -62,7 +62,7 @@ function FlameIcon({ active }: { active: boolean }) {
       </defs>
       <path
         d="M12 1.5c1.4 4 6 6 6 12.5 0 5-3.4 9-8.2 9C5.4 23 2 19.4 2 14.8c0-3.4 2-5.2 3.2-7.6 1.4 2 3 2.7 4.4 2.4-1-2.4.4-5.4 2.4-8.1z"
-        fill={active ? "url(#flameGrad)" : "#d9d9de"}
+        fill={active ? "url(#flameGrad)" : "rgb(var(--ink-200))"}
       />
     </svg>
   );

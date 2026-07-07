@@ -58,7 +58,7 @@ export function HabitCard({ habit, index }: HabitCardProps) {
     >
       <motion.div
         animate={shake}
-        className={`group relative flex items-stretch gap-4 rounded-4xl border border-ink-100 bg-white p-5 shadow-diffusion transition-shadow duration-200 hover:shadow-[0_24px_48px_-18px_rgba(0,0,0,0.12)] ${
+        className={`group relative flex items-stretch gap-4 rounded-4xl border border-ink-100 bg-surface p-5 shadow-diffusion transition-shadow duration-200 hover:shadow-[0_24px_48px_-18px_rgba(0,0,0,0.12)] ${
           !stats.dueToday ? "opacity-70" : ""
         }`}
       >
@@ -75,13 +75,13 @@ export function HabitCard({ habit, index }: HabitCardProps) {
                   style={{ backgroundColor: colorHex(habit.color) }}
                   aria-hidden
                 />
-                <motion.h3
-                  animate={{ color: stats.completed ? "#5b5b66" : "#0f0f12" }}
-                  transition={{ duration: 0.2 }}
-                  className="truncate text-[15px] font-semibold tracking-tight"
+                <h3
+                  className={`truncate text-[15px] font-semibold tracking-tight transition-colors duration-200 ${
+                    stats.completed ? "text-ink-500" : "text-ink-900"
+                  }`}
                 >
                   {habit.name}
-                </motion.h3>
+                </h3>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-400">
                 {timeLabel && (

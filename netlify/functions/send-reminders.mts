@@ -27,7 +27,9 @@ export default async () => {
   }
 };
 
-// Cada minuto (UTC). La hora local se calcula por zona horaria del usuario.
+// Cada 5 minutos (UTC): 5× menos invocaciones que cada minuto (ahorra
+// créditos de Netlify). La ruta usa una ventana de 4 min, así ningún
+// horario se pierde; a lo sumo el aviso llega hasta 4 min tarde.
 export const config: Config = {
-  schedule: "* * * * *",
+  schedule: "*/5 * * * *",
 };

@@ -41,18 +41,15 @@ export const MarkCircle = memo(function MarkCircle({
         )}
       </AnimatePresence>
 
-      {/* Outer ring (idle) */}
-      <motion.span
+      {/* Outer ring (idle). Colores por clase (no framer) para que sigan
+          al tema claro/oscuro; la transición CSS replica la animación. */}
+      <span
         aria-hidden
-        animate={{
-          backgroundColor: active ? "#0066FF" : "#ffffff",
-          borderColor: active ? "#0066FF" : "#d9d9de",
-          boxShadow: active
-            ? "0 0 0 8px rgba(0,102,255,0.10), 0 8px 24px -4px rgba(0,102,255,0.35)"
-            : "0 1px 2px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)",
-        }}
-        transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="absolute inset-0 rounded-full border-[1.5px]"
+        className={`absolute inset-0 rounded-full border-[1.5px] transition-all duration-200 ease-out-soft ${
+          active
+            ? "border-accent bg-accent shadow-glow"
+            : "border-ink-200 bg-surface shadow-soft"
+        }`}
       />
 
       {/* Checkmark */}
